@@ -1,22 +1,19 @@
-from ssl import DefaultVerifyPaths
 import pygame
 import random
 import sys
 import time
 import os
 
-import scipy as sp
-
 ## Font style
-global title_font_path, defeat_font_path, speed_font_path, score_font_path, defeat_background_path
-title_font_path = os.path.dirname(os.path.abspath(__file__)) + "/Fontstyle/Arcade.ttf"
-defeat_font_path = os.path.dirname(os.path.abspath(__file__)) + "/Fontstyle/Wasted.ttf"
-speed_font_path = os.path.dirname(os.path.abspath(__file__)) + "/Fontstyle/Speed.ttf"
-score_font_path = os.path.dirname(os.path.abspath(__file__)) + "/Fontstyle/MW.ttf"
+global font_path , title_font_path, defeat_font_path, speed_font_path, score_font_path, defeat_background_path
+font_path = os.path.dirname(os.path.abspath(__file__))
+title_font_path =  font_path +  "/Fontstyle/Arcade.ttf"
+defeat_font_path = font_path + "/Fontstyle/Wasted.ttf"
+speed_font_path = font_path + "/Fontstyle/Speed.ttf"
+score_font_path = font_path + "/Fontstyle/MW.ttf"
 defeat_background_path = (
-    os.path.dirname(os.path.abspath(__file__)) + "/Background/Wasted.jpeg"
+    font_path + "/Background/Wasted.jpeg"
 )
-
 
 class Food(object):
     def __init__(self, x, y, color):
@@ -101,6 +98,7 @@ dark_green = (0, 155, 0)  # Darker shade for the snake
 bright_red = (255, 0, 0)
 bright_green = (0, 255, 0)
 bright_blue = (0, 0, 255)
+bright_yellow = (255, 255, 0)
 
 
 title_custom_font = pygame.font.Font(title_font_path, 60)
@@ -188,11 +186,50 @@ def draw_main_title(msg):
     dis.blit(mesg, [dis_width // 3 - 100, dis_height // 2 - 300])
 
 
+
+def fade_background(new_background, fade_duration=1000):
+    # Get the current time
+    start_time = pygame.time.get_ticks()
+
+    # Create a surface for fading
+    fade_surface = pygame.Surface((dis_width, dis_height))
+    fade_surface.fill((0, 0, 0))  # Fill with black initially
+
+    while pygame.time.get_ticks() - start_time < fade_duration:
+        # Calculate the alpha value based on the elapsed time
+        elapsed_time = pygame.time.get_ticks() - start_time
+        alpha = (elapsed_time / fade_duration) * 255
+
+        # Draw the current background onto the fade surface
+        fade_surface.blit(game_background, (0, 0))
+
+        # Set the alpha value for the new background
+        new_background.set_alpha(alpha)
+
+        # Draw the new background onto the fade surface
+        fade_surface.blit(new_background, (0, 0))
+
+        # Blit the fade surface onto the display
+        dis.blit(fade_surface, (0, 0))
+
+        pygame.display.flip()
+        clock.tick(my_fps)
+    
+
 def defeat_message():
-    mesg = render_outlined_text("Wasted", defeat_custom_font, bright_red, black, 4)
+    mesg = render_outlined_text("Wasted", defeat_custom_font, bright_red, black, 3)
     dis.blit(mesg, [dis_width // 2 - mesg.get_width() // 2, dis_height // 2])
-    mesg = defeat_custom_font.render("Press Q-Quit or C-Play Again", True, bright_green)
-    dis.blit(mesg, [dis_width // 2, dis_height // 2 + 100])
+    current_time = pygame.time.get_ticks()
+    message_duration = 1500
+    message_interval = 2000
+
+    if current_time % message_interval < message_duration:
+        mesg2 = render_outlined_text(
+            "Press Q-Quit or C-Play Again", defeat_custom_font, bright_yellow, black, 3
+        )
+        dis.blit(
+            mesg2, [dis_width // 2 - mesg2.get_width() // 2, dis_height // 2 + 100]
+        )
 
 
 # Our snake function
@@ -277,6 +314,7 @@ def gameLoop():
 
     while not game_over:
         while game_close == True:
+
             dis.blit(defeat_background, [0, 0])
             defeat_message()
             your_score(length_of_snake - 1)
