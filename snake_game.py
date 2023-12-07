@@ -104,7 +104,7 @@ bright_blue = (0, 0, 255)
 
 
 title_custom_font = pygame.font.Font(title_font_path, 60)
-defeat_custom_font = pygame.font.Font(defeat_font_path, 60)
+defeat_custom_font = pygame.font.Font(defeat_font_path, 80)
 score_custom_font = pygame.font.Font(score_font_path, 25)
 
 # Set up display
@@ -189,10 +189,10 @@ def draw_main_title(msg):
 
 
 def defeat_message():
-    mesg = render_outlined_text("Wasted", defeat_custom_font, bright_red, black, 2)
+    mesg = render_outlined_text("Wasted", defeat_custom_font, bright_red, black, 4)
     dis.blit(mesg, [dis_width // 2 - mesg.get_width() // 2, dis_height // 2])
     mesg = defeat_custom_font.render("Press Q-Quit or C-Play Again", True, bright_green)
-    dis.blit(mesg, [dis_width // 2 - 200, dis_height // 2 + 100])
+    dis.blit(mesg, [dis_width // 2, dis_height // 2 + 100])
 
 
 # Our snake function
