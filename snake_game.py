@@ -8,11 +8,14 @@ import os
 import scipy as sp
 
 ## Font style
-global title_font_path, defeat_font_path, speed_font_path, score_font_path
-title_font_path = os.path.dirname(os.path.abspath(__file__)) + "/font_style/Arcade.ttf"
-defeat_font_path = os.path.dirname(os.path.abspath(__file__)) + "/font_style/Wasted.ttf"
-speed_font_path = os.path.dirname(os.path.abspath(__file__)) + "/font_style/Speed.ttf"
-score_font_path = os.path.dirname(os.path.abspath(__file__)) + "/font_style/MW.ttf"
+global title_font_path, defeat_font_path, speed_font_path, score_font_path, defeat_background_path
+title_font_path = os.path.dirname(os.path.abspath(__file__)) + "/Fontstyle/Arcade.ttf"
+defeat_font_path = os.path.dirname(os.path.abspath(__file__)) + "/Fontstyle/Wasted.ttf"
+speed_font_path = os.path.dirname(os.path.abspath(__file__)) + "/Fontstyle/Speed.ttf"
+score_font_path = os.path.dirname(os.path.abspath(__file__)) + "/Fontstyle/MW.ttf"
+defeat_background_path = (
+    os.path.dirname(os.path.abspath(__file__)) + "/Background/Wasted.jpeg"
+)
 
 
 class Food(object):
@@ -101,7 +104,7 @@ bright_blue = (0, 0, 255)
 
 
 title_custom_font = pygame.font.Font(title_font_path, 60)
-defeat_custon_font = pygame.font.Font(defeat_font_path, 60)
+defeat_custom_font = pygame.font.Font(defeat_font_path, 60)
 score_custom_font = pygame.font.Font(score_font_path, 25)
 
 # Set up display
@@ -110,6 +113,9 @@ dis_height = 800
 dis = pygame.display.set_mode((dis_width, dis_height))
 pygame.display.set_caption("Snake Game")
 
+global defeat_background
+defeat_background = pygame.image.load(defeat_background_path).convert()
+defeat_background = pygame.transform.scale(defeat_background, (dis_width, dis_height))
 
 clock = pygame.time.Clock()
 global my_fps
@@ -138,17 +144,54 @@ def your_fps(fps):
     dis.blit(value, [0, 25])
 
 
+_circle_cache = {}
+
+
+def _circlepoints(r):
+    r = int(round(r))
+    if r in _circle_cache:
+        return _circle_cache[r]
+    x, y, e = r, 0, 1 - r
+    _circle_cache[r] = points = []
+    while x >= y:
+        points.append((x, y))
+        y += 1
+        if e < 0:
+            e += 2 * y - 1
+        else:
+            x -= 1
+            e += 2 * (y - x) - 1
+    points += [(y, x) for x, y in points if x > y]
+    points += [(-x, y) for x, y in points if x]
+    points += [(x, -y) for x, y in points if y]
+    points.sort()
+    return points
+
+
+def render_outlined_text(text, font, gfcolor, ocolor, opx):
+    textsurface = font.render(text, True, gfcolor).convert_alpha()
+    w = textsurface.get_width() + 2 * opx
+    h = font.get_height()
+    osurf = pygame.Surface((w, h + 2 * opx)).convert_alpha()
+    osurf.fill((0, 0, 0, 0))
+    surf = osurf.copy()
+    osurf.blit(font.render(text, True, ocolor).convert_alpha(), (0, 0))
+    for dx, dy in _circlepoints(opx):
+        surf.blit(osurf, (dx + opx, dy + opx))
+    surf.blit(textsurface, (opx, opx))
+    return surf
+
+
 # Function to display the game's main title
 def draw_main_title(msg):
     mesg = title_custom_font.render(msg, True, white)
     dis.blit(mesg, [dis_width // 3 - 100, dis_height // 2 - 300])
 
 
-# Function to display messages
 def defeat_message():
-    mesg = defeat_custon_font.render("WASTED", True, bright_red)
-    dis.blit(mesg, [dis_width // 2, dis_height // 2])
-    mesg = defeat_custon_font.render("Press Q-Quit or C-Play Again", True, bright_green)
+    mesg = render_outlined_text("Wasted", defeat_custom_font, bright_red, black, 2)
+    dis.blit(mesg, [dis_width // 2 - mesg.get_width() // 2, dis_height // 2])
+    mesg = defeat_custom_font.render("Press Q-Quit or C-Play Again", True, bright_green)
     dis.blit(mesg, [dis_width // 2 - 200, dis_height // 2 + 100])
 
 
@@ -232,11 +275,9 @@ def gameLoop():
     speed_foodx = 0
     speed_foody = 0
 
-    speed_boost_duration = 5000
-
     while not game_over:
         while game_close == True:
-            dis.fill(black)
+            dis.blit(defeat_background, [0, 0])
             defeat_message()
             your_score(length_of_snake - 1)
             pygame.display.update()
