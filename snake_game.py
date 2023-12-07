@@ -1,13 +1,18 @@
+from ssl import DefaultVerifyPaths
 import pygame
 import random
 import sys
 import time
 import os
 
-## Font style
-global title_custom_font
-title_font_path = os.path.dirname(os.path.abspath(__file__)) + "/font_style/ka1.ttf"
+import scipy as sp
 
+## Font style
+global title_font_path, defeat_font_path, speed_font_path, score_font_path
+title_font_path = os.path.dirname(os.path.abspath(__file__)) + "/font_style/Arcade.ttf"
+defeat_font_path = os.path.dirname(os.path.abspath(__file__)) + "/font_style/Wasted.ttf"
+speed_font_path = os.path.dirname(os.path.abspath(__file__)) + "/font_style/Speed.ttf"
+score_font_path = os.path.dirname(os.path.abspath(__file__)) + "/font_style/MW.ttf"
 
 
 class Food(object):
@@ -96,7 +101,8 @@ bright_blue = (0, 0, 255)
 
 
 title_custom_font = pygame.font.Font(title_font_path, 60)
-defeat_custon_font = pygame.font.Font(title_font_path, 40)
+defeat_custon_font = pygame.font.Font(defeat_font_path, 60)
+score_custom_font = pygame.font.Font(score_font_path, 25)
 
 # Set up display
 dis_width = 1200
@@ -109,7 +115,7 @@ clock = pygame.time.Clock()
 global my_fps
 my_fps = 60
 
-# Define food type properties 
+# Define food type properties
 special_food_lifetime = 15000  # Special food disappears after 15 seconds
 speed_food_lifetime = 20000  # Speed food disappears after 20 seconds
 speed_boost_duration = 5000  # Speed boost lasts for 5 seconds
@@ -118,9 +124,10 @@ speed_boost_duration = 5000  # Speed boost lasts for 5 seconds
 snake_block = 10
 font_style = pygame.font.SysFont("bahnschrift", 25)
 
+
 # Function to display the score of the player
 def your_score(score):
-    value = font_style.render("Your Score: " + str(score), True, white)
+    value = score_custom_font.render("Your Score: " + str(score), True, white)
     dis.blit(value, [0, 0])
 
 
@@ -138,9 +145,11 @@ def draw_main_title(msg):
 
 
 # Function to display messages
-def message(msg, color):
-    mesg = font_style.render(msg, True, color)
-    dis.blit(mesg, [dis_width / 3, dis_height / 2 + 300])
+def defeat_message():
+    mesg = defeat_custon_font.render("WASTED", True, bright_red)
+    dis.blit(mesg, [dis_width // 2, dis_height // 2])
+    mesg = defeat_custon_font.render("Press Q-Quit or C-Play Again", True, bright_green)
+    dis.blit(mesg, [dis_width // 2 - 200, dis_height // 2 + 100])
 
 
 # Our snake function
@@ -188,14 +197,15 @@ def draw_pause_menu():
     """
     Function to draw the pause menu
     """
+
+
 global special_food_spawn_probability
 special_food_spawn_probability_per_second = 0.2
 global speed_food_spawn_probability
 speed_food_spawn_probability_per_second = 0.1
 
 
-def gameLoop(): 
-    
+def gameLoop():
     global snake_speed
     game_over = False
     game_close = False
@@ -227,7 +237,7 @@ def gameLoop():
     while not game_over:
         while game_close == True:
             dis.fill(black)
-            message("You lost! Press Q-Quit or C-Play Again", red)
+            defeat_message()
             your_score(length_of_snake - 1)
             pygame.display.update()
 
