@@ -5,8 +5,9 @@ import time
 import os
 
 ## Font style
-title_font_path = os.path.dirname(os.path.abspath(__file__)) + "/font_style/ka1.ttf"
 global title_custom_font
+title_font_path = os.path.dirname(os.path.abspath(__file__)) + "/font_style/ka1.ttf"
+
 
 
 class Food(object):
@@ -95,7 +96,7 @@ bright_blue = (0, 0, 255)
 
 
 title_custom_font = pygame.font.Font(title_font_path, 60)
-
+defeat_custon_font = pygame.font.Font(title_font_path, 40)
 
 # Set up display
 dis_width = 1200
@@ -108,13 +109,7 @@ clock = pygame.time.Clock()
 global my_fps
 my_fps = 60
 
-
-special_food_spawn_probability_per_second = (
-    0.1  # 10% chance of spawning special food per second
-)
-speed_food_spawn_probability_per_second = (
-    0.2  # 20% chance of spawning speed food per second
-)
+# Define food type properties 
 special_food_lifetime = 15000  # Special food disappears after 15 seconds
 speed_food_lifetime = 20000  # Speed food disappears after 20 seconds
 speed_boost_duration = 5000  # Speed boost lasts for 5 seconds
@@ -122,7 +117,6 @@ speed_boost_duration = 5000  # Speed boost lasts for 5 seconds
 
 snake_block = 10
 font_style = pygame.font.SysFont("bahnschrift", 25)
-
 
 # Function to display the score of the player
 def your_score(score):
@@ -139,7 +133,7 @@ def your_fps(fps):
 
 # Function to display the game's main title
 def draw_main_title(msg):
-    mesg = custom_font.render(msg, True, white)
+    mesg = title_custom_font.render(msg, True, white)
     dis.blit(mesg, [dis_width // 3 - 100, dis_height // 2 - 300])
 
 
@@ -194,9 +188,14 @@ def draw_pause_menu():
     """
     Function to draw the pause menu
     """
+global special_food_spawn_probability
+special_food_spawn_probability_per_second = 0.2
+global speed_food_spawn_probability
+speed_food_spawn_probability_per_second = 0.1
 
 
-def gameLoop():  # Creating a function
+def gameLoop(): 
+    
     global snake_speed
     game_over = False
     game_close = False
