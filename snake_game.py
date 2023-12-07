@@ -8,16 +8,16 @@ import os
 global font_path , title_font_path, defeat_font_path, speed_font_path, score_font_path, defeat_background_path
 global game_background_path
 main_path = os.path.dirname(os.path.abspath(__file__))
-title_font_path =  main_path +  "/Fonts/Arcade.ttf"
+
+title_font_path =  main_path +  "/Fonts/SnakeJacket.ttf"
 defeat_font_path = main_path + "/Fonts/Wasted.ttf"
 speed_font_path = main_path + "/Fonts/Speed.ttf"
 score_font_path = main_path + "/Fonts/MW.ttf"
 defeat_background_path = (
-    main_path + "/Background/Wasted.jpeg"
+    main_path + "/Background/LostMenu/Wasted.jpeg"
 )
-
-
-
+game_background_path = main_path + "/Background/Background.jpg"
+pause_background_path = main_path + "/Background/PauseMenu/pausemenu.jpg"
 
 
 class Food(object):
@@ -351,9 +351,7 @@ def gameLoop():
                     x1_change = 0
                 elif event.key == pygame.K_ESCAPE:
                     main_menu()
-                # elif event.key == pygame.K_p:
-                #     # Pause the game
-
+                
         # Teleportation
         if x1 >= dis_width:
             x1 = 0
