@@ -4,16 +4,21 @@ import sys
 import time
 import os
 
-## Font style
+#Asset paths
 global font_path , title_font_path, defeat_font_path, speed_font_path, score_font_path, defeat_background_path
-font_path = os.path.dirname(os.path.abspath(__file__))
-title_font_path =  font_path +  "/Fontstyle/Arcade.ttf"
-defeat_font_path = font_path + "/Fontstyle/Wasted.ttf"
-speed_font_path = font_path + "/Fontstyle/Speed.ttf"
-score_font_path = font_path + "/Fontstyle/MW.ttf"
+global game_background_path
+main_path = os.path.dirname(os.path.abspath(__file__))
+title_font_path =  main_path +  "/Fonts/Arcade.ttf"
+defeat_font_path = main_path + "/Fonts/Wasted.ttf"
+speed_font_path = main_path + "/Fonts/Speed.ttf"
+score_font_path = main_path + "/Fonts/MW.ttf"
 defeat_background_path = (
-    font_path + "/Background/Wasted.jpeg"
+    main_path + "/Background/Wasted.jpeg"
 )
+
+
+
+
 
 class Food(object):
     def __init__(self, x, y, color):
