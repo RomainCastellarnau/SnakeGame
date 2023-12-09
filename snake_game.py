@@ -121,6 +121,22 @@ global defeat_background
 defeat_background = pygame.image.load(defeat_background_path).convert()
 defeat_background = pygame.transform.scale(defeat_background, (dis_width, dis_height))
 
+#Sound
+
+pygame.mixer.init()
+menu_sound_path = main_path + "/Sound/Menu_OST.mp3"
+game_sound_path = main_path + "/Sound/Game_OST.mp3"
+death_sound_path = main_path + "/Sound/Death_OST.mp3"
+
+
+
+
+#Main Menu Icon
+icon_path = main_path + "/Assets/Sound/"
+mute_icon = pygame.image.load(icon_path + "Mute_Icon.png")
+sound_icon = pygame.image.load(icon_path + "Sound_Icon.png")
+
+
 clock = pygame.time.Clock()
 global my_fps
 my_fps = 60
@@ -133,6 +149,15 @@ speed_boost_duration = 5000  # Speed boost lasts for 5 seconds
 
 snake_block = 10
 font_style = pygame.font.SysFont("bahnschrift", 25)
+
+
+def play_game_music():
+    if not sound_muted:
+        pygame.mixer.music.stop()  # Stop the main menu music
+        game_music.set_volume(0.5)  # Adjust the volume if needed
+        game_music.play(-1)  # Play the game music in an infinite loop
+    else:
+        pygame.mixer.music.stop()  # Stop the main menu music
 
 
 # Function to display the score of the player
@@ -292,6 +317,10 @@ speed_food_spawn_probability_per_second = 0.1
 
 def gameLoop():
     global snake_speed
+    global menu_active
+    global sound_muted
+    global mute_unmute_button_rect
+
     game_over = False
     game_close = False
 
