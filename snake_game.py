@@ -148,8 +148,10 @@ defeat_background = pygame.transform.scale(defeat_background, (dis_width, dis_he
 icon_path = main_path + "/Assets/Sound/"
 mute_icon = pygame.image.load(icon_path + "Mute_Icon.png").convert_alpha()
 mute_icon = pygame.transform.scale(mute_icon, (50, 50))
+mute_icon.set_colorkey((255, 255, 255))
 sound_icon = pygame.image.load(icon_path + "Sound_Icon.png").convert_alpha()
 sound_icon = pygame.transform.scale(sound_icon, (50, 50))
+sound_icon.set_colorkey((255, 255, 255))
 menu_sound = pygame.mixer.Sound(main_path + "/Sound/Menu_OST.mp3")
 game_sound = pygame.mixer.Sound(main_path + "/Sound/Game_OST.mp3")
 death_sound = pygame.mixer.Sound(main_path + "/Sound/Death_OST.mp3")
@@ -535,6 +537,7 @@ def play_game_sound():
     game_sound.set_volume(0.5)
     game_sound.play(-1)
 
+
 def play_death_sound():
     death_sound.play()
     death_sound.set_volume(0.5)
@@ -582,8 +585,9 @@ def main_menu():
         )
 
         # Mute/Unmute button
-        mute_button_rect = draw_button(
-            "Mute", center_x - 225, center_y + 75, 100, 50, red, bright_red, toggle_mute
+
+        mute_button_rect = pygame.Rect(
+            10, 10, mute_icon.get_width(), mute_icon.get_height()
         )
 
         # Check if a difficulty button is clicked
@@ -606,10 +610,9 @@ def main_menu():
 
         for button in difficulty_buttons:
             if button["rect"].collidepoint(mouse) and click[0] == 1:
-                button["action"]()  # Execute the corresponding action
-                menu_active = (
-                    False  # Exit the menu loop when a difficulty button is clicked
-                )
+                button["action"]()
+                menu_sound.stop()
+                menu_active = False
 
         # Check if the mute button is clicked
         if mute_button_rect.collidepoint(mouse) and click[0] == 1:
@@ -624,11 +627,11 @@ def main_menu():
             death_sound.set_volume(0.0 if mute_status else 1.0)
 
         # Draw mute button image
-        dis.blit(mute_button_img, (center_x - 225, center_y + 75))
+        dis.blit(mute_button_img, (10, 10))
 
         # Scroll the background continuously
         scroll += 2
-        if scroll >= 3000:
+        if scroll >= 10000:
             scroll = 0
 
         pygame.display.update()
