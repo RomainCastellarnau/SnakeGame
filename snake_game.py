@@ -5,7 +5,7 @@ import time
 import os
 import asyncio
 import threading
-
+import pygame.mixer
 
 # Asset paths
 global font_path, title_font_path, defeat_font_path, speed_font_path, score_font_path, defeat_background_path
@@ -18,9 +18,6 @@ score_font_path = main_path + "/Fonts/MW.ttf"
 defeat_background_path = main_path + "/Background/LostMenu/Wasted.jpeg"
 game_background_path = main_path + "/Background/Background.jpg"
 pause_background_path = main_path + "/Background/PauseMenu/pausemenu.jpg"
-menu_sound_path = main_path + "/Sound/Menu_OST.mp3"
-game_sound_path = main_path + "/Sound/Game_OST.mp3"
-death_sound_path = main_path + "/Sound/Death_OST.mp3"
 # Load assets
 
 
@@ -96,6 +93,8 @@ class Menu(object):
 
 
 pygame.init()
+pygame.mixer.init()
+
 
 # Define colors
 black = (0, 0, 0)
@@ -136,6 +135,7 @@ for i in range(1, 6):
     bg_image = pygame.image.load(
         background_assets_path + "/MainMenu/" f"plx-{i}.png"
     ).convert_alpha()
+    bg_image = pygame.transform.scale(bg_image, (dis_width, dis_height))
     bg_images.append(bg_image)
 bg_width = bg_images[0].get_width()
 
@@ -146,9 +146,13 @@ defeat_background = pygame.transform.scale(defeat_background, (dis_width, dis_he
 
 # Main Menu Icon
 icon_path = main_path + "/Assets/Sound/"
-mute_icon = pygame.image.load(icon_path + "Mute_Icon.png")
-sound_icon = pygame.image.load(icon_path + "Sound_Icon.png")
-
+mute_icon = pygame.image.load(icon_path + "Mute_Icon.png").convert_alpha()
+mute_icon = pygame.transform.scale(mute_icon, (50, 50))
+sound_icon = pygame.image.load(icon_path + "Sound_Icon.png").convert_alpha()
+sound_icon = pygame.transform.scale(sound_icon, (50, 50))
+menu_sound = pygame.mixer.Sound(main_path + "/Sound/Menu_OST.mp3")
+game_sound = pygame.mixer.Sound(main_path + "/Sound/Game_OST.mp3")
+death_sound = pygame.mixer.Sound(main_path + "/Sound/Death_OST.mp3")
 
 clock = pygame.time.Clock()
 global my_fps
@@ -285,6 +289,8 @@ def our_snake(snake_block, snake_list):
 def draw_button(button_text, x, y, w, h, inactive_color, active_color, action=None):
     mouse = pygame.mouse.get_pos()
     click = pygame.mouse.get_pressed()
+    button_rect = None  # Initialize button rectangle to None
+
     if x + w > mouse[0] > x and y + h > mouse[1] > y:
         pygame.draw.rect(dis, active_color, (x, y, w, h))
         if click[0] == 1 and action is not None:
@@ -296,6 +302,9 @@ def draw_button(button_text, x, y, w, h, inactive_color, active_color, action=No
     text_rect = text_surf.get_rect()
     text_rect.center = ((x + (w / 2)), (y + (h / 2)))
     dis.blit(text_surf, text_rect)
+
+    button_rect = pygame.Rect(x, y, w, h)
+    return button_rect
 
 
 def draw_quit_button():
@@ -509,23 +518,45 @@ def set_hard():
 def draw_menu_background():
     global scroll
     for x in range(5):
-        speed = 1
+        speed = 0.5
         for i in bg_images:
             dis.blit(i, ((x * bg_width) - scroll * speed, 0))
             speed += 0.2
 
 
-def draw_ground():
-    global scroll
-    for x in range(15):
-        dis.blit(
-            ground, ((x * ground_width) - scroll * 2.5, dis_height - ground_height)
-        )
+def play_menu_sound():
+    menu_sound.play()
+    menu_sound.set_volume(0.5)
+    menu_sound.play(-1)
+
+
+def play_game_sound():
+    game_sound.play()
+    game_sound.set_volume(0.5)
+    game_sound.play(-1)
+
+def play_death_sound():
+    death_sound.play()
+    death_sound.set_volume(0.5)
+    death_sound.play(-1)
+
+
+def toggle_mute():
+    pass
 
 
 # Main menu function
 def main_menu():
+    global scroll
+    scroll = 0
     menu_active = True
+
+    play_menu_sound()
+
+    # Mute status
+    mute_status = False
+    mute_button_img = sound_icon
+
     while menu_active:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -533,7 +564,6 @@ def main_menu():
                 sys.exit()
 
         draw_menu_background()
-        draw_ground()
         # print the title SNAKE in Custom font
         draw_main_title("SNAKE - GAME")
         draw_quit_button()
@@ -551,17 +581,53 @@ def main_menu():
             "Hard", center_x + 125, center_y, 150, 50, red, bright_red, set_hard
         )
 
+        # Mute/Unmute button
+        mute_button_rect = draw_button(
+            "Mute", center_x - 225, center_y + 75, 100, 50, red, bright_red, toggle_mute
+        )
+
+        # Check if a difficulty button is clicked
         mouse = pygame.mouse.get_pos()
         click = pygame.mouse.get_pressed()
-        if (
-            center_x - 75 < mouse[0] < center_x + 75
-            and center_y < mouse[1] < center_y + 50
-        ):
-            if click[0] == 1:
-                menu_active = False  # Exit the menu loop when a button is clicked
+        difficulty_buttons = [
+            {
+                "rect": pygame.Rect(center_x - 275, center_y, 150, 50),
+                "action": set_easy,
+            },
+            {
+                "rect": pygame.Rect(center_x - 75, center_y, 150, 50),
+                "action": set_medium,
+            },
+            {
+                "rect": pygame.Rect(center_x + 125, center_y, 150, 50),
+                "action": set_hard,
+            },
+        ]
+
+        for button in difficulty_buttons:
+            if button["rect"].collidepoint(mouse) and click[0] == 1:
+                button["action"]()  # Execute the corresponding action
+                menu_active = (
+                    False  # Exit the menu loop when a difficulty button is clicked
+                )
+
+        # Check if the mute button is clicked
+        if mute_button_rect.collidepoint(mouse) and click[0] == 1:
+            # Toggle mute status
+            mute_status = not mute_status
+            # Change mute button image
+            mute_button_img = mute_icon if mute_status else sound_icon
+            # Toggle sounds based on mute status
+            pygame.mixer.music.set_volume(0.0 if mute_status else 1.0)
+            menu_sound.set_volume(0.0 if mute_status else 1.0)
+            game_sound.set_volume(0.0 if mute_status else 1.0)
+            death_sound.set_volume(0.0 if mute_status else 1.0)
+
+        # Draw mute button image
+        dis.blit(mute_button_img, (center_x - 225, center_y + 75))
 
         # Scroll the background continuously
-        scroll += 5
+        scroll += 2
         if scroll >= 3000:
             scroll = 0
 
