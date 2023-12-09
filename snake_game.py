@@ -16,9 +16,8 @@ defeat_font_path = main_path + "/Fonts/Wasted.ttf"
 speed_font_path = main_path + "/Fonts/Speed.ttf"
 score_font_path = main_path + "/Fonts/MW.ttf"
 defeat_background_path = main_path + "/Background/LostMenu/Wasted.jpeg"
-game_background_path = main_path + "/Background/Background.jpg"
+game_background_path = main_path + "/Background//Game/GameBackground.jpeg"
 pause_background_path = main_path + "/Background/PauseMenu/pausemenu.jpg"
-# Load assets
 
 
 class Food(object):
@@ -139,10 +138,11 @@ for i in range(1, 6):
     bg_images.append(bg_image)
 bg_width = bg_images[0].get_width()
 
-global defeat_background
+global defeat_background, game_background
 defeat_background = pygame.image.load(defeat_background_path).convert()
 defeat_background = pygame.transform.scale(defeat_background, (dis_width, dis_height))
-
+game_background = pygame.image.load(game_background_path).convert()
+game_background = pygame.transform.scale(game_background, (dis_width, dis_height))
 
 # Main Menu Icon
 icon_path = main_path + "/Assets/Sound/"
@@ -268,6 +268,9 @@ def draw_main_title(msg):
 
 
 def defeat_message():
+    global mute_status
+    if mute_status == False:
+        play_death_sound()
     mesg = render_outlined_text("Wasted", defeat_custom_font, bright_red, black, 3)
     dis.blit(mesg, [dis_width // 2 - mesg.get_width() // 2, dis_height // 2])
     current_time = pygame.time.get_ticks()
@@ -343,10 +346,10 @@ speed_food_spawn_probability_per_second = 0.1
 
 def gameLoop():
     global snake_speed
-    global menu_active
-    global sound_muted
-    global mute_unmute_button_rect
-
+    global mute_status
+    pygame.mixer.stop()
+    if mute_status == False:
+        play_game_sound()
     game_over = False
     game_close = False
 
@@ -374,6 +377,8 @@ def gameLoop():
 
     while not game_over:
         while game_close == True:
+            if pygame.mixer.music.get_busy():
+                pygame.mixer.music.stop()
             dis.blit(defeat_background, [0, 0])
             defeat_message()
             your_score(length_of_snake - 1)
@@ -420,8 +425,7 @@ def gameLoop():
         y1 += y1_change
 
         # Draw the background
-        dis.fill(black)
-
+        dis.blit(game_background, [0, 0])
         # Normal food
         pygame.draw.rect(dis, blue, [foodx, foody, snake_block, snake_block])
 
@@ -542,8 +546,7 @@ def play_game_sound():
 
 def play_death_sound():
     death_sound.play()
-    death_sound.set_volume(0.5)
-    death_sound.play(-1)
+    death_sound.set_volume(1)
 
 
 def toggle_mute():
@@ -552,6 +555,7 @@ def toggle_mute():
 
 # Main menu function
 def main_menu():
+    global mute_status
     global scroll
     scroll = 0
     menu_active = True
@@ -613,7 +617,8 @@ def main_menu():
         for button in difficulty_buttons:
             if button["rect"].collidepoint(mouse) and click[0] == 1:
                 button["action"]()
-                menu_sound.stop()
+                if pygame.mixer.music.get_busy():
+                    pygame.mixer.music.stop()
                 menu_active = False
 
         # Check if the mute button is clicked
