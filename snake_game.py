@@ -232,7 +232,9 @@ def render_outlined_text(text, font, gfcolor, ocolor, opx):
 # Function to display the game's main title
 def draw_main_title(msg):
     mesg = title_custom_font.render(msg, True, white)
-    dis.blit(mesg, [dis_width // 3 - 100, dis_height // 2 - 300])
+    text_rect = mesg.get_rect(midtop=(dis_width // 2, dis_height // 2 - 300))
+
+    dis.blit(mesg, text_rect)
 
 
 ##Fading Transition
@@ -631,7 +633,7 @@ def main_menu():
 
         # Scroll the background continuously
         scroll += 2
-        if scroll >= 10000:
+        if scroll >= 3000:
             scroll = 0
 
         pygame.display.update()
