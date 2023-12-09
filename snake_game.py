@@ -9,9 +9,8 @@ import threading
 
 # Asset paths
 global font_path, title_font_path, defeat_font_path, speed_font_path, score_font_path, defeat_background_path
-global game_background_path
+global game_background_path, pause_background_path, menu_sound_path, game_sound_path, death_sound_path
 main_path = os.path.dirname(os.path.abspath(__file__))
-
 title_font_path = main_path + "/Fonts/SnakeJacket.ttf"
 defeat_font_path = main_path + "/Fonts/Wasted.ttf"
 speed_font_path = main_path + "/Fonts/Speed.ttf"
@@ -19,6 +18,10 @@ score_font_path = main_path + "/Fonts/MW.ttf"
 defeat_background_path = main_path + "/Background/LostMenu/Wasted.jpeg"
 game_background_path = main_path + "/Background/Background.jpg"
 pause_background_path = main_path + "/Background/PauseMenu/pausemenu.jpg"
+menu_sound_path = main_path + "/Sound/Menu_OST.mp3"
+game_sound_path = main_path + "/Sound/Game_OST.mp3"
+death_sound_path = main_path + "/Sound/Death_OST.mp3"
+# Load assets
 
 
 class Food(object):
@@ -117,20 +120,51 @@ dis_height = 800
 dis = pygame.display.set_mode((dis_width, dis_height))
 pygame.display.set_caption("Snake Game")
 
+global scroll
+scroll = 0
+
+# Load the game background
+background_assets_path = main_path + "/Assets/Background"
+ground = pygame.image.load(background_assets_path + "/MainMenu/ground.png").convert()
+ground = pygame.transform.scale(ground, (dis_width, dis_height))
+ground_width = ground.get_width()
+ground_height = ground.get_height()
+
+# Loading other assets
+bg_images = []
+for i in range(1, 6):
+    bg_image = pygame.image.load(
+        background_assets_path + "/MainMenu/" f"plx-{i}.png"
+    ).convert_alpha()
+    bg_images.append(bg_image)
+bg_width = bg_images[0].get_width()
+
+
 global defeat_background
 defeat_background = pygame.image.load(defeat_background_path).convert()
 defeat_background = pygame.transform.scale(defeat_background, (dis_width, dis_height))
 
-#Sound
 
-pygame.mixer.init()
-menu_sound_path = main_path + "/Sound/Menu_OST.mp3"
-game_sound_path = main_path + "/Sound/Game_OST.mp3"
-death_sound_path = main_path + "/Sound/Death_OST.mp3"
+def draw_menu_background():
+    for x in range(5):
+        speed = 1
+        for i in bg_images:
+            dis.blit(i, ((x * bg_width) - scroll * speed, 0))
+            speed += 0.2
 
 
+def draw_ground():
+    for x in range(15):
+        dis.blit(
+            ground, ((x * ground_width) - scroll * 2.5, dis_height - ground_height)
+        )
 
-#Main Menu Icon
+
+# Sound
+# pygame.mixer.init()
+
+
+# Main Menu Icon
 icon_path = main_path + "/Assets/Sound/"
 mute_icon = pygame.image.load(icon_path + "Mute_Icon.png")
 sound_icon = pygame.image.load(icon_path + "Sound_Icon.png")
@@ -150,13 +184,13 @@ snake_block = 10
 font_style = pygame.font.SysFont("bahnschrift", 25)
 
 
-def play_game_music():
-    if not sound_muted:
-        pygame.mixer.music.stop()  # Stop the main menu music
-        game_music.set_volume(0.5)  # Adjust the volume if needed
-        game_music.play(-1)  # Play the game music in an infinite loop
-    else:
-        pygame.mixer.music.stop()  # Stop the main menu music
+# def play_game_music():
+#     if not sound_muted:
+#         pygame.mixer.music.stop()  # Stop the main menu music
+#         game_music.set_volume(0.5)  # Adjust the volume if needed
+#         game_music.play(-1)  # Play the game music in an infinite loop
+#     else:
+#         pygame.mixer.music.stop()  # Stop the main menu music
 
 
 # Function to display the score of the player
@@ -216,33 +250,34 @@ def draw_main_title(msg):
     dis.blit(mesg, [dis_width // 3 - 100, dis_height // 2 - 300])
 
 
-def fade_background(new_background, fade_duration=1000):
-    # Get the current time
-    start_time = pygame.time.get_ticks()
+##Fading Transition
+# def fade_background(new_background, fade_duration=1000):
+#     # Get the current time
+#     start_time = pygame.time.get_ticks()
 
-    # Create a surface for fading
-    fade_surface = pygame.Surface((dis_width, dis_height))
-    fade_surface.fill((0, 0, 0))  # Fill with black initially
+#     # Create a surface for fading
+#     fade_surface = pygame.Surface((dis_width, dis_height))
+#     fade_surface.fill((0, 0, 0))  # Fill with black initially
 
-    while pygame.time.get_ticks() - start_time < fade_duration:
-        # Calculate the alpha value based on the elapsed time
-        elapsed_time = pygame.time.get_ticks() - start_time
-        alpha = (elapsed_time / fade_duration) * 255
+#     while pygame.time.get_ticks() - start_time < fade_duration:
+#         # Calculate the alpha value based on the elapsed time
+#         elapsed_time = pygame.time.get_ticks() - start_time
+#         alpha = (elapsed_time / fade_duration) * 255
 
-        # Draw the current background onto the fade surface
-        fade_surface.blit(game_background, (0, 0))
+#         # Draw the current background onto the fade surface
+#         fade_surface.blit(game_background, (0, 0))
 
-        # Set the alpha value for the new background
-        new_background.set_alpha(alpha)
+#         # Set the alpha value for the new background
+#         new_background.set_alpha(alpha)
 
-        # Draw the new background onto the fade surface
-        fade_surface.blit(new_background, (0, 0))
+#         # Draw the new background onto the fade surface
+#         fade_surface.blit(new_background, (0, 0))
 
-        # Blit the fade surface onto the display
-        dis.blit(fade_surface, (0, 0))
+#         # Blit the fade surface onto the display
+#         dis.blit(fade_surface, (0, 0))
 
-        pygame.display.flip()
-        clock.tick(my_fps)
+#         pygame.display.flip()
+#         clock.tick(my_fps)
 
 
 def defeat_message():
@@ -501,7 +536,8 @@ def main_menu():
                 pygame.quit()
                 sys.exit()
 
-        dis.fill(black)  # Background
+        draw_menu_background()
+        draw_ground()
 
         # print the title SNAKE in Custom font
         draw_main_title("SNAKE - GAME")
