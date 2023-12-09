@@ -20,79 +20,102 @@ game_background_path = main_path + "/Background//Game/GameBackground.jpeg"
 pause_background_path = main_path + "/Background/PauseMenu/pausemenu.jpg"
 
 
-class Food(object):
-    def __init__(self, x, y, color):
-        self.x = x
-        self.y = y
-        self.color = color
-
-    def draw(self):
-        pass
-
-    def eat(self):
-        pass
-
-    def appear(self):
-        pass
-
-    def disappear(self):
-        pass
-
-
-class SpecialFood(Food):
-    def __init__(self, x, y, color):
-        super().__init__(x, y, color)
-        self.color = color
-
-    def draw(self):
-        pass
-
-    def eat(self):
-        pass
-
-    def appear(self):
-        pass
-
-    def disappear(self):
-        pass
-
-
-class SpeedFood(Food):
-    def __init__(self, x, y, color):
-        super().__init__(x, y, color)
-        self.color = color
-
-    def draw(self):
-        pass
-
-    def eat(self):
-        pass
-
-    def appear(self):
-        pass
-
-    def disappear(self):
-        pass
-
-
-class Menu(object):
-    def __init__(self, x, y, color):
-        self.x = x
-        self.y = y
-        self.color = color
-
-    def draw(self):
-        pass
-
-    def play(self):
-        pass
-
-    def quit(self):
-        pass
-
-
 pygame.init()
-pygame.mixer.init()
+
+
+class SnakeSegment(pygame.sprite.Sprite):
+    def __init__(self, image, x, y):
+        super().__init__()
+        self.image = image.convert_alpha()
+        self.image = pygame.transform.scale(image, (snake_block, snake_block))
+        self.rect = self.image.get_rect()
+        self.rect.x = x
+        self.rect.y = y
+
+
+class Snake:
+    def __init__(self):
+        self.snake_segments = pygame.sprite.Group()
+        self.direction = "RIGHT"
+        self.score = 0
+
+        for i in range(2):
+            x = dis_width // 2 - i * snake_block
+            y = dis_height // 2
+            segment = SnakeSegment(snake_body_imgs["HORIZONTAL"], x, y)
+            self.snake_segments.add(segment)
+
+    def add_segment(self, x, y):
+        segment = SnakeSegment(snake_body_imgs["HORIZONTAL"], x, y)
+        self.snake_segments.add(segment)
+
+    def move(self):
+        head = self.snake_segments.sprites()[0]
+        tail = self.snake_segments.sprites()[-1]
+
+        if self.direction == "RIGHT":
+            new_head = SnakeSegment(
+                snake_head_imgs["RIGHT"], head.rect.x + snake_block, head.rect.y
+            )
+        elif self.direction == "LEFT":
+            new_head = SnakeSegment(
+                snake_head_imgs["LEFT"], head.rect.x - snake_block, head.rect.y
+            )
+        elif self.direction == "UP":
+            new_head = SnakeSegment(
+                snake_head_imgs["UP"], head.rect.x, head.rect.y - snake_block
+            )
+        elif self.direction == "DOWN":
+            new_head = SnakeSegment(
+                snake_head_imgs["DOWN"], head.rect.x, head.rect.y + snake_block
+            )
+
+        self.snake_segments.add(new_head)
+        self.snake_segments.remove(tail)
+
+    def grow(self):
+        tail = self.snake_segments.sprites()[-1]
+        direction_map = {
+            "RIGHT": (-snake_block, 0),
+            "LEFT": (snake_block, 0),
+            "UP": (0, snake_block),
+            "DOWN": (0, -snake_block),
+        }
+        new_tail = SnakeSegment(
+            snake_tail_imgs[self.direction],
+            tail.rect.x + direction_map[self.direction][0],
+            tail.rect.y + direction_map[self.direction][1],
+        )
+        self.snake_segments.add(new_tail)
+
+    def draw(self, dis):
+        self.snake_segments.draw(dis)
+
+
+# Snake images
+snake_image_path = main_path + "/Assets/Snake/"
+snake_head_imgs = {
+    "UP": pygame.image.load(snake_image_path + "head_up.png"),
+    "DOWN": pygame.image.load(snake_image_path + "head_down.png"),
+    "LEFT": pygame.image.load(snake_image_path + "head_left.png"),
+    "RIGHT": pygame.image.load(snake_image_path + "head_right.png"),
+}
+
+snake_body_imgs = {
+    "HORIZONTAL": pygame.image.load(snake_image_path + "body_horizontal.png"),
+    "VERTICAL": pygame.image.load(snake_image_path + "body_vertical.png"),
+    "TOPLEFT": pygame.image.load(snake_image_path + "body_topleft.png"),
+    "TOPRIGHT": pygame.image.load(snake_image_path + "body_topright.png"),
+    "BOTTOMLEFT": pygame.image.load(snake_image_path + "body_bottomleft.png"),
+    "BOTTOMRIGHT": pygame.image.load(snake_image_path + "body_bottomright.png"),
+}
+
+snake_tail_imgs = {
+    "UP": pygame.image.load(snake_image_path + "tail_up.png"),
+    "DOWN": pygame.image.load(snake_image_path + "tail_down.png"),
+    "LEFT": pygame.image.load(snake_image_path + "tail_left.png"),
+    "RIGHT": pygame.image.load(snake_image_path + "tail_right.png"),
+}
 
 
 # Define colors
@@ -101,7 +124,7 @@ white = (255, 255, 255)
 red = (213, 50, 80)
 green = (0, 255, 0)
 blue = (50, 153, 213)
-dark_green = (0, 155, 0)  # Darker shade for the snake
+dark_green = (0, 155, 0)
 bright_red = (255, 0, 0)
 bright_green = (0, 255, 0)
 bright_blue = (0, 0, 255)
@@ -157,8 +180,7 @@ game_sound = pygame.mixer.Sound(main_path + "/Sound/Game_OST.mp3")
 death_sound = pygame.mixer.Sound(main_path + "/Sound/Death_OST.mp3")
 
 clock = pygame.time.Clock()
-global my_fps
-my_fps = 60
+
 
 # Define food type properties
 special_food_lifetime = 15000  # Special food disappears after 15 seconds
@@ -182,13 +204,6 @@ font_style = pygame.font.SysFont("bahnschrift", 25)
 def your_score(score):
     value = score_custom_font.render("Your Score: " + str(score), True, white)
     dis.blit(value, [0, 0])
-
-
-# Function to display the FPS on the top right corner of the screen
-def your_fps(fps):
-    fps = round(fps, 2)
-    value = font_style.render("Your FPS: " + str(fps), True, white)
-    dis.blit(value, [0, 25])
 
 
 _circle_cache = {}
@@ -231,59 +246,48 @@ def render_outlined_text(text, font, gfcolor, ocolor, opx):
 
 # Function to display the game's main title
 def draw_main_title(msg):
-    mesg = title_custom_font.render(msg, True, white)
+    mesg = title_custom_font.render(msg, True, bright_yellow)
     text_rect = mesg.get_rect(midtop=(dis_width // 2, dis_height // 2 - 300))
 
     dis.blit(mesg, text_rect)
 
 
-##Fading Transition
-# def fade_background(new_background, fade_duration=1000):
-#     # Get the current time
-#     start_time = pygame.time.get_ticks()
-
-#     # Create a surface for fading
-#     fade_surface = pygame.Surface((dis_width, dis_height))
-#     fade_surface.fill((0, 0, 0))  # Fill with black initially
-
-#     while pygame.time.get_ticks() - start_time < fade_duration:
-#         # Calculate the alpha value based on the elapsed time
-#         elapsed_time = pygame.time.get_ticks() - start_time
-#         alpha = (elapsed_time / fade_duration) * 255
-
-#         # Draw the current background onto the fade surface
-#         fade_surface.blit(game_background, (0, 0))
-
-#         # Set the alpha value for the new background
-#         new_background.set_alpha(alpha)
-
-#         # Draw the new background onto the fade surface
-#         fade_surface.blit(new_background, (0, 0))
-
-#         # Blit the fade surface onto the display
-#         dis.blit(fade_surface, (0, 0))
-
-#         pygame.display.flip()
-#         clock.tick(my_fps)
-
-
 def defeat_message():
     global mute_status
-    if mute_status == False:
-        play_death_sound()
+    global length_of_snake
+
     mesg = render_outlined_text("Wasted", defeat_custom_font, bright_red, black, 3)
-    dis.blit(mesg, [dis_width // 2 - mesg.get_width() // 2, dis_height // 2])
+    score_message = render_outlined_text(
+        "Your Score: " + str(length_of_snake - 1),
+        defeat_custom_font,
+        bright_yellow,
+        black,
+        3,
+    )
     current_time = pygame.time.get_ticks()
     message_duration = 1500
     message_interval = 2000
 
-    if current_time % message_interval < message_duration:
-        mesg2 = render_outlined_text(
-            "Press Q-Quit or C-Play Again", defeat_custom_font, bright_yellow, black, 3
-        )
+    # Wait 1 sec before displaying the message
+    if current_time > 1000:
+        dis.blit(mesg, [dis_width // 2 - mesg.get_width() // 2, dis_height // 2])
         dis.blit(
-            mesg2, [dis_width // 2 - mesg2.get_width() // 2, dis_height // 2 + 100]
+            score_message,
+            [dis_width // 2 - score_message.get_width() // 2, dis_height // 2 - 150],
         )
+    # Wait 1 sec before displaying replay message
+    if current_time > 2000:
+        if current_time % message_interval < message_duration:
+            mesg2 = render_outlined_text(
+                "Press Q-Quit or C-Play Again",
+                defeat_custom_font,
+                bright_yellow,
+                black,
+                3,
+            )
+            dis.blit(
+                mesg2, [dis_width // 2 - mesg2.get_width() // 2, dis_height // 2 + 100]
+            )
 
 
 # Our snake function
@@ -338,21 +342,81 @@ def draw_pause_menu():
     """
 
 
-global special_food_spawn_probability
-special_food_spawn_probability_per_second = 0.2
-global speed_food_spawn_probability
-speed_food_spawn_probability_per_second = 0.1
+def generate_layout(screen_width, screen_height, difficulty):
+    layout_color = white
+    layout_width = 200 + difficulty * 50
+    layout_height = 100 + difficulty * 30
+
+    layout_x = random.randrange(0, screen_width - layout_width, 10)
+    layout_y = random.randrange(0, screen_height - layout_height, 10)
+
+    return (layout_x, layout_y, layout_width, layout_height, layout_color)
+
+
+special_food_appeared = False
+special_foodx = 0
+special_foody = 0
+
+speed_food_appeared = False
+speed_foodx = 0
+speed_foody = 0
+
+
+def generate_food_position_with_constraints(
+    layout_x,
+    layout_y,
+    layout_width,
+    layout_height,
+    food_appeared,
+    special_food_appeared,
+    speed_food_appeared,
+    snake_List,
+):
+    while True:
+        foodx = round(random.randrange(0, dis_width - snake_block) / 10.0) * 10.0
+        foody = round(random.randrange(0, dis_height - snake_block) / 10.0) * 10.0
+
+        # Check if food is on the layout
+        if (foodx >= layout_x and foodx < layout_x + layout_width) and (
+            foody >= layout_y and foody < layout_y + layout_height
+        ):
+            continue
+
+        # Check if food is on top of other food
+        if food_appeared and any(foodx == x[0] and foody == x[1] for x in snake_List):
+            continue
+
+        if special_food_appeared and (
+            foodx == special_foodx and foody == special_foody
+        ):
+            continue
+
+        if speed_food_appeared and (foodx == speed_foodx and foody == speed_foody):
+            continue
+
+        return foodx, foody
 
 
 def gameLoop():
+    global special_food_appeared, special_foodx, special_foody
+    global speed_food_appeared, speed_foodx, speed_foody
     global snake_speed
+    global length_of_snake
     global mute_status
+    global difficulty
+
+    original_snake_speed = snake_speed
+    start_time = time.time()
+    speed_boost_duration = 5
+
+    death_sound_played = False
     pygame.mixer.stop()
-    if mute_status == False:
+    if not mute_status:
         play_game_sound()
+
     game_over = False
     game_close = False
-
+    my_fps = clock.get_fps()
     clock.tick(my_fps)
 
     x1 = dis_width / 2
@@ -364,24 +428,31 @@ def gameLoop():
     snake_List = []
     length_of_snake = 1
 
-    foodx = round(random.randrange(0, dis_width - snake_block) / 10.0) * 10.0
-    foody = round(random.randrange(0, dis_height - snake_block) / 10.0) * 10.0
+    # Generate the layout
+    layout_x, layout_y, layout_width, layout_height, layout_color = generate_layout(
+        dis_width, dis_height, difficulty
+    )
 
-    special_food_appeared = False
-    special_foodx = 0
-    special_foody = 0
-
-    speed_food_appeared = False
-    speed_foodx = 0
-    speed_foody = 0
+    foodx, foody = generate_food_position_with_constraints(
+        layout_x,
+        layout_y,
+        layout_width,
+        layout_height,
+        False,
+        special_food_appeared,
+        speed_food_appeared,
+        snake_List,
+    )
 
     while not game_over:
         while game_close == True:
-            if pygame.mixer.music.get_busy():
-                pygame.mixer.music.stop()
             dis.blit(defeat_background, [0, 0])
+            if not death_sound_played and not mute_status:
+                pygame.mixer.stop()  # Stop any playing sounds
+                play_death_sound()
+                death_sound_played = True
+
             defeat_message()
-            your_score(length_of_snake - 1)
             pygame.display.update()
 
             for event in pygame.event.get():
@@ -390,7 +461,7 @@ def gameLoop():
                         game_over = True
                         game_close = False
                     if event.key == pygame.K_c:
-                        main_menu()
+                        main_menu()  # Exit the defeat screen loop
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -411,6 +482,8 @@ def gameLoop():
                 elif event.key == pygame.K_ESCAPE:
                     main_menu()
 
+        dis.blit(game_background, [0, 0])
+        your_score(length_of_snake - 1)
         # Teleportation
         if x1 >= dis_width:
             x1 = 0
@@ -424,38 +497,42 @@ def gameLoop():
         x1 += x1_change
         y1 += y1_change
 
-        # Draw the background
-        dis.blit(game_background, [0, 0])
+        # Draw the layout
+        pygame.draw.rect(
+            dis, layout_color, [layout_x, layout_y, layout_width, layout_height]
+        )
+
         # Normal food
         pygame.draw.rect(dis, blue, [foodx, foody, snake_block, snake_block])
 
-        # Special food
-        if (
-            not special_food_appeared and random.random() < 0.005
-        ):  # Adjust the probability as needed
+        # # Special food
+        # special_food_appeared = False
+        if not special_food_appeared and random.random() < 0.005:
             special_food_appeared = True
-            special_foodx = (
-                round(random.randrange(0, dis_width - snake_block) / 10.0) * 10.0
-            )
-            special_foody = (
-                round(random.randrange(0, dis_height - snake_block) / 10.0) * 10.0
+            special_foodx, special_foody = generate_food_position_with_constraints(
+                layout_x,
+                layout_y,
+                layout_width,
+                layout_height,
+                True,
+                special_food_appeared,
+                speed_food_appeared,
+                snake_List,
             )
 
-        # Speed food
-        if (
-            not speed_food_appeared and random.random() < 0.002
-        ):  # Adjust the probability as needed
+        if not speed_food_appeared and random.random() < 0.001:
             speed_food_appeared = True
-            speed_foodx = (
-                round(random.randrange(0, dis_width - snake_block) / 10.0) * 10.0
-            )
-            speed_foody = (
-                round(random.randrange(0, dis_height - snake_block) / 10.0) * 10.0
+            speed_foodx, speed_foody = generate_food_position_with_constraints(
+                layout_x,
+                layout_y,
+                layout_width,
+                layout_height,
+                True,
+                special_food_appeared,
+                speed_food_appeared,
+                snake_List,
             )
 
-        # Draw the speed boost timer
-
-        # Draw the special food if it has appeared
         if special_food_appeared:
             pygame.draw.rect(
                 dis, red, [special_foodx, special_foody, snake_block, snake_block]
@@ -482,21 +559,36 @@ def gameLoop():
 
         # Draw the snake
         our_snake(snake_block, snake_List)
-        # Update the score
         your_score(length_of_snake - 1)
-        your_fps(clock.get_fps())
-
         # Update the display
         pygame.display.update()
 
         if x1 == foodx and y1 == foody:
-            foodx = round(random.randrange(0, dis_width - snake_block) / 10.0) * 10.0
-            foody = round(random.randrange(0, dis_height - snake_block) / 10.0) * 10.0
+            foodx, foody = generate_food_position_with_constraints(
+                layout_x,
+                layout_y,
+                layout_width,
+                layout_height,
+                True,
+                special_food_appeared,
+                speed_food_appeared,
+                snake_List,
+            )
+
             length_of_snake += 1
 
         if x1 == special_foodx and y1 == special_foody:
             special_food_appeared = False
             length_of_snake += 2
+
+        if x1 == speed_foodx and y1 == speed_foody:
+            speed_food_appeared = False
+            start_time = time.time()
+            snake_speed += 10
+            length_of_snake += 1
+
+        if time.time() - start_time > speed_boost_duration:
+            snake_speed = original_snake_speed
 
         clock.tick(snake_speed)
 
@@ -506,19 +598,25 @@ def gameLoop():
 
 # Functions to set difficulty
 def set_easy():
+    global difficulty
     global snake_speed
+    difficulty = 1
     snake_speed = 20
     gameLoop()
 
 
 def set_medium():
+    global difficulty
     global snake_speed
+    difficulty = 2
     snake_speed = 30
     gameLoop()
 
 
 def set_hard():
+    global difficulty
     global snake_speed
+    difficulty = 3
     snake_speed = 50
     gameLoop()
 
@@ -546,11 +644,14 @@ def play_game_sound():
 
 def play_death_sound():
     death_sound.play()
-    death_sound.set_volume(1)
+    death_sound.set_volume(0.5)
 
 
 def toggle_mute():
     pass
+
+
+pygame.mixer.init()
 
 
 # Main menu function
