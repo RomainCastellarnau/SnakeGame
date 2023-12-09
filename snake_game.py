@@ -130,7 +130,6 @@ death_sound_path = main_path + "/Sound/Death_OST.mp3"
 
 
 
-
 #Main Menu Icon
 icon_path = main_path + "/Assets/Sound/"
 mute_icon = pygame.image.load(icon_path + "Mute_Icon.png")
