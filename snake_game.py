@@ -120,11 +120,9 @@ dis_height = 800
 dis = pygame.display.set_mode((dis_width, dis_height))
 pygame.display.set_caption("Snake Game")
 
-global scroll
-scroll = 0
 
 # Load the game background
-background_assets_path = main_path + "/Assets/Background"
+background_assets_path = main_path + "/Background"
 ground = pygame.image.load(background_assets_path + "/MainMenu/ground.png").convert()
 ground = pygame.transform.scale(ground, (dis_width, dis_height))
 ground_width = ground.get_width()
@@ -354,7 +352,8 @@ def gameLoop():
     global menu_active
     global sound_muted
     global mute_unmute_button_rect
-
+    global scroll
+    scroll = 0
     game_over = False
     game_close = False
 
@@ -538,12 +537,9 @@ def main_menu():
 
         draw_menu_background()
         draw_ground()
-
         # print the title SNAKE in Custom font
         draw_main_title("SNAKE - GAME")
-
         draw_quit_button()
-
         # Draw buttons
         center_x = dis_width // 2
         center_y = dis_height // 2
@@ -557,6 +553,21 @@ def main_menu():
         draw_button(
             "Hard", center_x + 125, center_y, 150, 50, red, bright_red, set_hard
         )
+
+        mouse = pygame.mouse.get_pos()
+        click = pygame.mouse.get_pressed()
+        if (
+            center_x - 75 < mouse[0] < center_x + 75
+            and center_y < mouse[1] < center_y + 50
+        ):
+            if click[0] == 1:
+                menu_active = False  # Exit the menu loop when a button is clicked
+
+        key = pygame.key.get_pressed()
+        if key[pygame.K_LEFT] and scroll > 0:
+            scroll -= 5
+        if key[pygame.K_RIGHT] and scroll < 3000:
+            scroll += 5
 
         pygame.display.update()
 
