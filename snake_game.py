@@ -110,6 +110,8 @@ bright_blue = (0, 0, 255)
 bright_yellow = (255, 255, 0)
 
 
+scroll = 0
+
 title_custom_font = pygame.font.Font(title_font_path, 60)
 defeat_custom_font = pygame.font.Font(defeat_font_path, 80)
 score_custom_font = pygame.font.Font(score_font_path, 25)
@@ -124,7 +126,7 @@ pygame.display.set_caption("Snake Game")
 # Load the game background
 background_assets_path = main_path + "/Background"
 ground = pygame.image.load(background_assets_path + "/MainMenu/ground.png").convert()
-ground = pygame.transform.scale(ground, (dis_width, dis_height))
+# ground = pygame.transform.scale(ground, (dis_width, dis_height))
 ground_width = ground.get_width()
 ground_height = ground.get_height()
 
@@ -137,29 +139,9 @@ for i in range(1, 6):
     bg_images.append(bg_image)
 bg_width = bg_images[0].get_width()
 
-
 global defeat_background
 defeat_background = pygame.image.load(defeat_background_path).convert()
 defeat_background = pygame.transform.scale(defeat_background, (dis_width, dis_height))
-
-
-def draw_menu_background():
-    for x in range(5):
-        speed = 1
-        for i in bg_images:
-            dis.blit(i, ((x * bg_width) - scroll * speed, 0))
-            speed += 0.2
-
-
-def draw_ground():
-    for x in range(15):
-        dis.blit(
-            ground, ((x * ground_width) - scroll * 2.5, dis_height - ground_height)
-        )
-
-
-# Sound
-# pygame.mixer.init()
 
 
 # Main Menu Icon
@@ -180,7 +162,6 @@ speed_boost_duration = 5000  # Speed boost lasts for 5 seconds
 
 snake_block = 10
 font_style = pygame.font.SysFont("bahnschrift", 25)
-
 
 # def play_game_music():
 #     if not sound_muted:
@@ -352,8 +333,7 @@ def gameLoop():
     global menu_active
     global sound_muted
     global mute_unmute_button_rect
-    global scroll
-    scroll = 0
+
     game_over = False
     game_close = False
 
@@ -526,6 +506,23 @@ def set_hard():
     gameLoop()
 
 
+def draw_menu_background():
+    global scroll
+    for x in range(5):
+        speed = 1
+        for i in bg_images:
+            dis.blit(i, ((x * bg_width) - scroll * speed, 0))
+            speed += 0.2
+
+
+def draw_ground():
+    global scroll
+    for x in range(15):
+        dis.blit(
+            ground, ((x * ground_width) - scroll * 2.5, dis_height - ground_height)
+        )
+
+
 # Main menu function
 def main_menu():
     menu_active = True
@@ -563,11 +560,10 @@ def main_menu():
             if click[0] == 1:
                 menu_active = False  # Exit the menu loop when a button is clicked
 
-        key = pygame.key.get_pressed()
-        if key[pygame.K_LEFT] and scroll > 0:
-            scroll -= 5
-        if key[pygame.K_RIGHT] and scroll < 3000:
-            scroll += 5
+        # Scroll the background continuously
+        scroll += 5
+        if scroll >= 3000:
+            scroll = 0
 
         pygame.display.update()
 
