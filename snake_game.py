@@ -346,7 +346,6 @@ def store_layout_appearance(layouts):
 
     return stored_layout_appearance
 
-
 def draw_layout_block(layout_block, block_size):
     (
         edge_rock_asset,
