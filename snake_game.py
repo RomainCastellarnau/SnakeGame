@@ -6,7 +6,7 @@ import os
 import pygame.mixer
 
 
-# Asset paths
+
 global font_path, title_font_path, defeat_font_path, score_font_path, defeat_background_path
 global game_background_path, pause_background_path, menu_sound_path, game_sound_path, death_sound_path
 main_path = os.path.dirname(os.path.abspath(__file__))
@@ -22,7 +22,7 @@ pygame.init()
 
 
 snake_block = 20
-# Define colors
+
 black = (0, 0, 0)
 white = (255, 255, 255)
 red = (213, 50, 80)
