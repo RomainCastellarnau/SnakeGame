@@ -6,6 +6,7 @@ import os
 import pygame.mixer
 
 
+
 # Asset paths
 global font_path, title_font_path, defeat_font_path, speed_font_path, score_font_path, defeat_background_path
 global game_background_path, pause_background_path, menu_sound_path, game_sound_path, death_sound_path
@@ -20,75 +21,6 @@ pause_background_path = main_path + "/Background/PauseMenu/pausemenu.jpg"
 
 
 pygame.init()
-
-
-class SnakeSegment(pygame.sprite.Sprite):
-    def __init__(self, image, x, y):
-        super().__init__()
-        self.image = image.convert_alpha()
-        self.image = pygame.transform.scale(image, (snake_block, snake_block))
-        self.rect = self.image.get_rect()
-        self.rect.x = x
-        self.rect.y = y
-
-
-class Snake:
-    def __init__(self):
-        self.snake_segments = pygame.sprite.Group()
-        self.direction = "RIGHT"
-        self.score = 0
-
-        for i in range(2):
-            x = dis_width // 2 - i * snake_block
-            y = dis_height // 2
-            segment = SnakeSegment(snake_body_imgs["HORIZONTAL"], x, y)
-            self.snake_segments.add(segment)
-
-    def add_segment(self, x, y):
-        segment = SnakeSegment(snake_body_imgs["HORIZONTAL"], x, y)
-        self.snake_segments.add(segment)
-
-    def move(self):
-        head = self.snake_segments.sprites()[0]
-        tail = self.snake_segments.sprites()[-1]
-
-        if self.direction == "RIGHT":
-            new_head = SnakeSegment(
-                snake_head_imgs["RIGHT"], head.rect.x + snake_block, head.rect.y
-            )
-        elif self.direction == "LEFT":
-            new_head = SnakeSegment(
-                snake_head_imgs["LEFT"], head.rect.x - snake_block, head.rect.y
-            )
-        elif self.direction == "UP":
-            new_head = SnakeSegment(
-                snake_head_imgs["UP"], head.rect.x, head.rect.y - snake_block
-            )
-        elif self.direction == "DOWN":
-            new_head = SnakeSegment(
-                snake_head_imgs["DOWN"], head.rect.x, head.rect.y + snake_block
-            )
-
-        self.snake_segments.add(new_head)
-        self.snake_segments.remove(tail)
-
-    def grow(self):
-        tail = self.snake_segments.sprites()[-1]
-        direction_map = {
-            "RIGHT": (-snake_block, 0),
-            "LEFT": (snake_block, 0),
-            "UP": (0, snake_block),
-            "DOWN": (0, -snake_block),
-        }
-        new_tail = SnakeSegment(
-            snake_tail_imgs[self.direction],
-            tail.rect.x + direction_map[self.direction][0],
-            tail.rect.y + direction_map[self.direction][1],
-        )
-        self.snake_segments.add(new_tail)
-
-    def draw(self, dis):
-        self.snake_segments.draw(dis)
 
 
 snake_block = 20
@@ -122,33 +54,6 @@ dis_height = 800
 dis = pygame.display.set_mode((dis_width, dis_height))
 pygame.display.set_caption("Snake Game")
 
-
-# Snake images
-snake_image_path = main_path + "/Assets/Snake/"
-snake_head_imgs = {
-    "UP": pygame.image.load(snake_image_path + "head_up.png"),
-    "DOWN": pygame.image.load(snake_image_path + "head_down.png"),
-    "LEFT": pygame.image.load(snake_image_path + "head_left.png"),
-    "RIGHT": pygame.image.load(snake_image_path + "head_right.png"),
-}
-
-snake_body_imgs = {
-    "HORIZONTAL": pygame.image.load(snake_image_path + "body_horizontal.png"),
-    "VERTICAL": pygame.image.load(snake_image_path + "body_vertical.png"),
-    "TOPLEFT": pygame.image.load(snake_image_path + "body_topleft.png"),
-    "TOPRIGHT": pygame.image.load(snake_image_path + "body_topright.png"),
-    "BOTTOMLEFT": pygame.image.load(snake_image_path + "body_bottomleft.png"),
-    "BOTTOMRIGHT": pygame.image.load(snake_image_path + "body_bottomright.png"),
-}
-
-snake_tail_imgs = {
-    "UP": pygame.image.load(snake_image_path + "tail_up.png"),
-    "DOWN": pygame.image.load(snake_image_path + "tail_down.png"),
-    "LEFT": pygame.image.load(snake_image_path + "tail_left.png"),
-    "RIGHT": pygame.image.load(snake_image_path + "tail_right.png"),
-}
-
-
 # Food Assets
 game_assets_path = main_path + "/Assets"
 food_assets_path = game_assets_path + "/Food/"
@@ -180,14 +85,8 @@ edge_rock_assets = [
     for i in range(1, 5)
 ]
 
-# Load the game background
+# Load the menu background
 background_assets_path = main_path + "/Background"
-ground = pygame.image.load(background_assets_path + "/MainMenu/ground.png").convert()
-# ground = pygame.transform.scale(ground, (dis_width, dis_height))
-ground_width = ground.get_width()
-ground_height = ground.get_height()
-
-# Loading other assets
 bg_images = []
 for i in range(1, 6):
     bg_image = pygame.image.load(
@@ -308,17 +207,16 @@ def defeat_message():
             )
 
 
-# Our snake function
 def our_snake(snake_block, snake_list):
     for x in snake_list:
         pygame.draw.rect(dis, dark_green, [x[0], x[1], snake_block, snake_block])
 
 
-# Function to draw buttons
+
 def draw_button(button_text, x, y, w, h, inactive_color, active_color, action=None):
     mouse = pygame.mouse.get_pos()
     click = pygame.mouse.get_pressed()
-    button_rect = None  # Initialize button rectangle to None
+    button_rect = None 
 
     if x + w > mouse[0] > x and y + h > mouse[1] > y:
         pygame.draw.rect(dis, active_color, (x, y, w, h))
@@ -364,17 +262,30 @@ def generate_layout(dis_width, dis_height, difficulty, snake_block):
     initial_snake_y = dis_height / 2
 
     min_distance = 4 * block_size
+    min_separation = 2 * block_size
+
+    # Initialize the grid of occupied cells
+    grid_rows = dis_height // snake_block
+    grid_cols = dis_width // snake_block
+    occupied_cells = [[False] * grid_cols for _ in range(grid_rows)]
 
     for _ in range(min_blocks):
         block_width = random.randint(2, 7) * block_size
         block_height = random.randint(2, 7) * block_size
 
-        # Generate a random position for the block, avoiding the initial snake position
-        # and ensuring separation from other blocks
-        while True:
+        max_attempts = 400  # Maximum attempts to find a suitable position
+
+        for _ in range(max_attempts):
             block_x = random.randint(0, dis_width - block_width)
             block_y = random.randint(0, dis_height - block_height)
 
+            if (
+                block_x // snake_block < 0
+                or (block_x + block_width) // snake_block >= grid_cols
+                or block_y // snake_block < 0
+                or (block_y + block_height) // snake_block >= grid_rows
+            ):
+                continue
             # Check if the block is far enough from the initial snake position
             if (
                 initial_snake_x < block_x + block_width + min_distance
@@ -385,20 +296,30 @@ def generate_layout(dis_width, dis_height, difficulty, snake_block):
                 continue
 
             # Check if the block is far enough from other layout blocks
-            layout_distance_okay = all(
-                (
-                    abs(block_x - x) > min_distance
-                    and abs(block_y - y) > min_distance
-                    and abs(block_x + block_width - x - w) > min_distance
-                    and abs(block_y + block_height - y - h) > min_distance
+            overlap = any(
+                occupied_cells[row + r][col + c]
+                for row in range(
+                    block_y // snake_block, (block_y + block_height) // snake_block
                 )
-                for x, y, w, h in layout
+                for col in range(
+                    block_x // snake_block, (block_x + block_width) // snake_block
+                )
+                for r in range(-1, 2)
+                for c in range(-1, 2)
             )
 
-            if layout_distance_okay:
-                break
+            if not overlap:
+                # Mark the occupied positions in the grid
+                for row in range(
+                    block_y // snake_block, (block_y + block_height) // snake_block
+                ):
+                    for col in range(
+                        block_x // snake_block, (block_x + block_width) // snake_block
+                    ):
+                        occupied_cells[row][col] = True
 
-        layout.append((block_x, block_y, block_width, block_height))
+                layout.append((block_x, block_y, block_width, block_height))
+                break
 
     return layout
 
@@ -408,7 +329,7 @@ def store_layout_appearance(layouts):
     for layout_block in layouts:
         block_x, block_y, block_width, block_height = layout_block
 
-        # Generate a random appearance for the block
+        # Choose a random edge rock asset and middle rock asset
         edge_rock_asset = random.choice(edge_rock_assets)
         middle_rock_asset = random.choice(middle_rock_assets)
 
@@ -436,7 +357,7 @@ def draw_layout_block(layout_block, block_size):
         block_height,
     ) = layout_block
 
-    # Draw the full contour of the layout block with edge_rock_assets
+   
     for x in range(block_x, block_x + block_width, block_size):
         dis.blit(edge_rock_asset, (x, block_y))
         dis.blit(edge_rock_asset, (x, block_y + block_height - block_size))
@@ -445,7 +366,7 @@ def draw_layout_block(layout_block, block_size):
         dis.blit(edge_rock_asset, (block_x, y))
         dis.blit(edge_rock_asset, (block_x + block_width - block_size, y))
 
-    # Draw middle rocks in the middle
+    
     for x in range(
         block_x + block_size, block_x + block_width - block_size, block_size
     ):
@@ -471,53 +392,45 @@ speed_foody = 0
 
 def generate_food_position_with_layout_constraints(
     layout,
-    food_appeared,
-    special_food_appeared,
-    speed_food_appeared,
     snake_List,
     snake_block,
-    min_distance=0 * snake_block,
+    special_food_appeared,
+    special_food_pos,
+    speed_food_appeared,
+    speed_food_pos,
+    min_distance=snake_block,
 ):
-    try:
-        layout_rects = [
-            pygame.Rect(x, y, width, height) for x, y, width, height in layout
-        ]
-        while True:
-            foodx = (
-                round(random.randrange(0, dis_width - snake_block) / snake_block)
-                * snake_block
-            )
-            foody = (
-                round(random.randrange(0, dis_height - snake_block) / snake_block)
-                * snake_block
-            )
+    layout_rects = [pygame.Rect(x, y, width, height) for x, y, width, height in layout]
+    invalid_positions = set(
+        (x, y)
+        for rect in layout_rects
+        for x in range(rect.left, rect.right, snake_block)
+        for y in range(rect.top, rect.bottom, snake_block)
+    )
 
-            food_rect = pygame.Rect(foodx, foody, snake_block, snake_block)
-            too_close = any(
-                layout_rect.inflate(min_distance, min_distance).colliderect(food_rect)
-                for layout_rect in layout_rects
-            )
+    invalid_positions.update((int(x), int(y)) for x, y in map(tuple, snake_List))
 
-            # Check if food is on top of other food
-            if food_appeared and any(
-                foodx == x[0] and foody == x[1] for x in snake_List
-            ):
-                too_close = True
+    if special_food_appeared:
+        invalid_positions.add((int(special_food_pos[0]), int(special_food_pos[1])))
 
-            if special_food_appeared and (
-                foodx == special_foodx and foody == special_foody
-            ):
-                too_close = True
+    if speed_food_appeared:
+        invalid_positions.add((int(speed_food_pos[0]), int(speed_food_pos[1])))
 
-            if speed_food_appeared and (foodx == speed_foodx and foody == speed_foody):
-                too_close = True
+    valid_positions = [
+        (x, y)
+        for x in range(0, dis_width, snake_block)
+        for y in range(0, dis_height, snake_block)
+        if all(
+            abs(x - ix) >= min_distance and abs(y - iy) >= min_distance
+            for ix, iy in invalid_positions
+        )
+    ]
 
-            if not too_close:
-                return foodx, foody
-
-    except Exception as e:
-        print(f"Exception in generate_food_position_with_layout_constraints: {e}")
-        raise
+    if valid_positions:
+        return random.choice(valid_positions)
+    else:
+        # Handle the case when there are no valid positions
+        raise ValueError("Unable to find a suitable food position")
 
 
 def draw_food(food_type, food_x, food_y):
@@ -542,7 +455,7 @@ def set_medium():
     global difficulty
     global snake_speed
     difficulty = 4
-    snake_speed = 20
+    snake_speed = 15
     gameLoop()
 
 
@@ -550,7 +463,7 @@ def set_hard():
     global difficulty
     global snake_speed
     difficulty = 6
-    snake_speed = 30
+    snake_speed = 25
     gameLoop()
 
 
@@ -704,15 +617,20 @@ def gameLoop():
     layouts = generate_layout(dis_width, dis_height, difficulty, snake_block)
     stored_layout_appearance = store_layout_appearance(layouts)
 
-    # Generate the first food
     foodx, foody = generate_food_position_with_layout_constraints(
         layouts,
-        False,
-        special_food_appeared,
-        speed_food_appeared,
         snake_List,
         snake_block,
+        special_food_appeared,
+        (special_foodx, special_foody),
+        speed_food_appeared,
+        (speed_foodx, speed_foody),
     )
+
+    special_food_appeared = False
+    special_foodx, special_foody = 0, 0
+    speed_food_appeared = False
+    speed_foodx, speed_foody = 0, 0
 
     while not game_over:
         while game_close == True:
@@ -782,32 +700,32 @@ def gameLoop():
 
         # Check the probability of special food appearing
         if not special_food_appeared and random.random() < 0.005:
-            special_food_appeared = True
-            # If special food appears, generate its position
             (
                 special_foodx,
                 special_foody,
             ) = generate_food_position_with_layout_constraints(
                 layouts,
-                True,
-                special_food_appeared,
-                speed_food_appeared,
                 snake_List,
                 snake_block,
+                special_food_appeared,
+                (special_foodx, special_foody),
+                speed_food_appeared,
+                (speed_foodx, speed_foody),
             )
+            special_food_appeared = True
 
         # Check the probability of speed food appearing
         if not speed_food_appeared and random.random() < 0.002:
-            speed_food_appeared = True
-            # If speed food appears, generate its position
             speed_foodx, speed_foody = generate_food_position_with_layout_constraints(
                 layouts,
-                True,
-                special_food_appeared,
-                speed_food_appeared,
                 snake_List,
                 snake_block,
+                special_food_appeared,
+                (special_foodx, special_foody),
+                speed_food_appeared,
+                (speed_foodx, speed_foody),
             )
+            speed_food_appeared = True
 
         # Draw the special food if it has appeared
         if special_food_appeared:
@@ -852,11 +770,12 @@ def gameLoop():
         if x1 == foodx and y1 == foody:
             foodx, foody = generate_food_position_with_layout_constraints(
                 layouts,
-                True,
-                special_food_appeared,
-                speed_food_appeared,
                 snake_List,
                 snake_block,
+                special_food_appeared,
+                (special_foodx, special_foody),
+                speed_food_appeared,
+                (speed_foodx, speed_foody),
             )
 
             length_of_snake += 1
@@ -875,6 +794,7 @@ def gameLoop():
             snake_speed = original_snake_speed
 
         clock.tick(snake_speed)
+
     pygame.quit()
     quit()
 
