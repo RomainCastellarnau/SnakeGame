@@ -6,14 +6,12 @@ import os
 import pygame.mixer
 
 
-
 # Asset paths
-global font_path, title_font_path, defeat_font_path, speed_font_path, score_font_path, defeat_background_path
+global font_path, title_font_path, defeat_font_path, score_font_path, defeat_background_path
 global game_background_path, pause_background_path, menu_sound_path, game_sound_path, death_sound_path
 main_path = os.path.dirname(os.path.abspath(__file__))
 title_font_path = main_path + "/Fonts/SnakeJacket.ttf"
 defeat_font_path = main_path + "/Fonts/Wasted.ttf"
-speed_font_path = main_path + "/Fonts/Speed.ttf"
 score_font_path = main_path + "/Fonts/MW.ttf"
 defeat_background_path = main_path + "/Background/LostMenu/Wasted.jpeg"
 game_background_path = main_path + "/Background//Game/GameBackground.jpeg"
@@ -212,11 +210,10 @@ def our_snake(snake_block, snake_list):
         pygame.draw.rect(dis, dark_green, [x[0], x[1], snake_block, snake_block])
 
 
-
 def draw_button(button_text, x, y, w, h, inactive_color, active_color, action=None):
     mouse = pygame.mouse.get_pos()
     click = pygame.mouse.get_pressed()
-    button_rect = None 
+    button_rect = None
 
     if x + w > mouse[0] > x and y + h > mouse[1] > y:
         pygame.draw.rect(dis, active_color, (x, y, w, h))
@@ -346,6 +343,7 @@ def store_layout_appearance(layouts):
 
     return stored_layout_appearance
 
+
 def draw_layout_block(layout_block, block_size):
     (
         edge_rock_asset,
@@ -356,7 +354,6 @@ def draw_layout_block(layout_block, block_size):
         block_height,
     ) = layout_block
 
-   
     for x in range(block_x, block_x + block_width, block_size):
         dis.blit(edge_rock_asset, (x, block_y))
         dis.blit(edge_rock_asset, (x, block_y + block_height - block_size))
@@ -365,7 +362,6 @@ def draw_layout_block(layout_block, block_size):
         dis.blit(edge_rock_asset, (block_x, y))
         dis.blit(edge_rock_asset, (block_x + block_width - block_size, y))
 
-    
     for x in range(
         block_x + block_size, block_x + block_width - block_size, block_size
     ):
