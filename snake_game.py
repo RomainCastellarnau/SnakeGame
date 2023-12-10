@@ -29,10 +29,13 @@ red = (213, 50, 80)
 green = (0, 255, 0)
 blue = (50, 153, 213)
 dark_green = (0, 155, 0)
+dark_blue = (0, 0, 139)
 bright_red = (255, 0, 0)
 bright_green = (0, 255, 0)
 bright_blue = (0, 0, 255)
 bright_yellow = (255, 255, 0)
+purple = (127, 0, 255)
+pink = (255, 51, 255)
 
 
 scroll = 0
@@ -45,6 +48,7 @@ title_custom_font = pygame.font.Font(title_font_path, 60)
 defeat_custom_font = pygame.font.Font(defeat_font_path, 80)
 score_custom_font = pygame.font.Font(score_font_path, 25)
 font_style = pygame.font.SysFont("bahnschrift", 25)
+button_custom_font = pygame.font.Font(title_font_path, 15)
 
 # Set up display
 dis_width = 1200
@@ -112,11 +116,9 @@ menu_sound = pygame.mixer.Sound(main_path + "/Sound/Menu_OST.mp3")
 game_sound = pygame.mixer.Sound(main_path + "/Sound/Game_OST.mp3")
 death_sound = pygame.mixer.Sound(main_path + "/Sound/Death_OST.mp3")
 
-
 clock = pygame.time.Clock()
 
 
-# Function to display the score of the player
 def your_score(score):
     value = score_custom_font.render("Your Score: " + str(score), True, white)
     dis.blit(value, [0, 0])
@@ -160,7 +162,6 @@ def render_outlined_text(text, font, gfcolor, ocolor, opx):
     return surf
 
 
-# Function to display the game's main title
 def draw_main_title(msg):
     mesg = title_custom_font.render(msg, True, bright_yellow)
     text_rect = mesg.get_rect(midtop=(dis_width // 2, dis_height // 2 - 300))
@@ -205,9 +206,31 @@ def defeat_message():
             )
 
 
+def blend_colors(color1, color2, ratio):
+    return (
+        int(color1[0] * ratio + color2[0] * (1 - ratio)),
+        int(color1[1] * ratio + color2[1] * (1 - ratio)),
+        int(color1[2] * ratio + color2[2] * (1 - ratio)),
+    )
+
+
+def draw_snake_block(x, y, snake_block, gradient_ratio):
+    head_color = pink
+    tail_color = purple
+    color = blend_colors(tail_color, head_color, gradient_ratio)
+
+    pygame.draw.rect(dis, color, [x, y, snake_block, snake_block])
+
+
 def our_snake(snake_block, snake_list):
-    for x in snake_list:
-        pygame.draw.rect(dis, dark_green, [x[0], x[1], snake_block, snake_block])
+    snake_length = len(snake_list)
+    if snake_length > 1:
+        for i, (x, y) in enumerate(snake_list):
+            gradient_ratio = i / (snake_length - 1)
+            draw_snake_block(x, y, snake_block, gradient_ratio)
+    elif snake_length == 1:
+        x, y = snake_list[0]
+        draw_snake_block(x, y, snake_block, 1.0)
 
 
 def draw_button(button_text, x, y, w, h, inactive_color, active_color, action=None):
@@ -222,7 +245,7 @@ def draw_button(button_text, x, y, w, h, inactive_color, active_color, action=No
     else:
         pygame.draw.rect(dis, inactive_color, (x, y, w, h))
 
-    text_surf = font_style.render(button_text, True, black)
+    text_surf = button_custom_font.render(button_text, True, black)
     text_rect = text_surf.get_rect()
     text_rect.center = ((x + (w / 2)), (y + (h / 2)))
     dis.blit(text_surf, text_rect)
@@ -232,7 +255,6 @@ def draw_button(button_text, x, y, w, h, inactive_color, active_color, action=No
 
 
 def draw_quit_button():
-    """Function to draw the quit button should be on the top right corner of the screen"""
     mouse = pygame.mouse.get_pos()
     click = pygame.mouse.get_pressed()
     if dis_width - 100 + 50 > mouse[0] > dis_width - 100 and 0 + 50 > mouse[1] > 0:
@@ -243,7 +265,7 @@ def draw_quit_button():
     else:
         pygame.draw.rect(dis, red, (dis_width - 100, 0, 100, 50))
 
-    text_surf = font_style.render("Quit", True, black)
+    text_surf = button_custom_font.render("QUIT", True, black)
     text_rect = text_surf.get_rect()
     text_rect.center = ((dis_width - 50), (25))
     dis.blit(text_surf, text_rect)
@@ -437,7 +459,6 @@ def draw_food(food_type, food_x, food_y):
         dis.blit(speed_food_asset, (food_x, food_y), (0, 0, snake_block, snake_block))
 
 
-# Functions to set difficulty
 def set_easy():
     global difficulty
     global snake_speed
@@ -490,7 +511,6 @@ def toggle_mute():
     pass
 
 
-# Main menu function
 def main_menu():
     pygame.mixer.init()
     global scroll, mute_status
@@ -513,13 +533,13 @@ def main_menu():
         center_y = dis_height // 2
         # Adjust the x-coordinates for the "Easy", "Medium", and "Hard" buttons
         draw_button(
-            "Easy", center_x - 275, center_y, 150, 50, green, bright_green, set_easy
+            "EASY", center_x - 275, center_y, 150, 50, green, bright_green, set_easy
         )
         draw_button(
-            "Medium", center_x - 75, center_y, 150, 50, blue, bright_blue, set_medium
+            "MEDIUM", center_x - 75, center_y, 150, 50, blue, bright_blue, set_medium
         )
         draw_button(
-            "Hard", center_x + 125, center_y, 150, 50, red, bright_red, set_hard
+            "HARD", center_x + 125, center_y, 150, 50, red, bright_red, set_hard
         )
 
         # Mute/Unmute button
@@ -794,5 +814,4 @@ def gameLoop():
     quit()
 
 
-# Call the main menu function
 main_menu()
