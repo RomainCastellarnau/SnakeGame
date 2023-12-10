@@ -107,6 +107,10 @@ bright_yellow = (255, 255, 0)
 
 scroll = 0
 
+global mute_status
+mute_status = False
+
+
 title_custom_font = pygame.font.Font(title_font_path, 60)
 defeat_custom_font = pygame.font.Font(defeat_font_path, 80)
 score_custom_font = pygame.font.Font(score_font_path, 25)
@@ -264,7 +268,6 @@ def draw_main_title(msg):
 
 
 def defeat_message():
-    global mute_status
     global length_of_snake
 
     mesg = render_outlined_text("Wasted", defeat_custom_font, bright_red, black, 3)
@@ -347,21 +350,50 @@ def draw_quit_button():
     dis.blit(text_surf, text_rect)
 
 
-def draw_pause_menu():
-    """
-    Function to draw the pause menu
-    """
-
-
-def generate_layout(dis_width, dis_height, difficulty):
+def generate_layout(dis_width, dis_height, difficulty, snake_block):
     block_size = 10
     min_blocks = difficulty
     layout = []
+
+    # Initial position of the snake
+    initial_snake_x = dis_width / 2
+    initial_snake_y = dis_height / 2
+
+    min_distance = 4 * block_size
+
     for _ in range(min_blocks):
         block_width = random.randint(2, 7) * block_size
         block_height = random.randint(2, 7) * block_size
-        block_x = random.randint(0, dis_width - block_width)
-        block_y = random.randint(0, dis_height - block_height)
+
+        # Generate a random position for the block, avoiding the initial snake position
+        # and ensuring separation from other blocks
+        while True:
+            block_x = random.randint(0, dis_width - block_width)
+            block_y = random.randint(0, dis_height - block_height)
+
+            # Check if the block is far enough from the initial snake position
+            if (
+                initial_snake_x < block_x + block_width + min_distance
+                and initial_snake_x + snake_block > block_x - min_distance
+                and initial_snake_y < block_y + block_height + min_distance
+                and initial_snake_y + snake_block > block_y - min_distance
+            ):
+                continue
+
+            # Check if the block is far enough from other layout blocks
+            layout_distance_okay = all(
+                (
+                    abs(block_x - x) > min_distance
+                    and abs(block_y - y) > min_distance
+                    and abs(block_x + block_width - x - w) > min_distance
+                    and abs(block_y + block_height - y - h) > min_distance
+                )
+                for x, y, w, h in layout
+            )
+
+            if layout_distance_okay:
+                break
+
         layout.append((block_x, block_y, block_width, block_height))
 
     return layout
@@ -417,6 +449,7 @@ def generate_food_position_with_layout_constraints(
 
         return foodx, foody
 
+
 def draw_food(food_type, food_x, food_y):
     if food_type == "normal":
         dis.blit(food_asset, (food_x, food_y))
@@ -425,13 +458,154 @@ def draw_food(food_type, food_x, food_y):
     elif food_type == "speed":
         dis.blit(speed_food_asset, (food_x, food_y))
 
+
+# Functions to set difficulty
+def set_easy():
+    global difficulty
+    global snake_speed
+    difficulty = 2
+    snake_speed = 20
+    gameLoop()
+
+
+def set_medium():
+    global difficulty
+    global snake_speed
+    difficulty = 5
+    snake_speed = 25
+    gameLoop()
+
+
+def set_hard():
+    global difficulty
+    global snake_speed
+    difficulty = 10
+    snake_speed = 30
+    gameLoop()
+
+
+def draw_menu_background():
+    global scroll
+    for x in range(5):
+        speed = 0.5
+        for i in bg_images:
+            dis.blit(i, ((x * bg_width) - scroll * speed, 0))
+            speed += 0.2
+
+
+def play_menu_sound():
+    menu_sound.play()
+    menu_sound.play(-1)
+
+
+def play_game_sound():
+    game_sound.play()
+    game_sound.play(-1)
+
+
+def play_death_sound():
+    death_sound.play()
+    death_sound.set_volume(0.5)
+
+
+def toggle_mute():
+    pass
+
+
+# Main menu function
+def main_menu():
+    pygame.mixer.init()
+    global scroll, mute_status
+    scroll = 0
+    menu_active = True
+    play_menu_sound()
+
+    while menu_active:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+
+        draw_menu_background()
+        # print the title SNAKE in Custom font
+        draw_main_title("SNAKE - GAME")
+        draw_quit_button()
+        # Draw buttons
+        center_x = dis_width // 2
+        center_y = dis_height // 2
+        # Adjust the x-coordinates for the "Easy", "Medium", and "Hard" buttons
+        draw_button(
+            "Easy", center_x - 275, center_y, 150, 50, green, bright_green, set_easy
+        )
+        draw_button(
+            "Medium", center_x - 75, center_y, 150, 50, blue, bright_blue, set_medium
+        )
+        draw_button(
+            "Hard", center_x + 125, center_y, 150, 50, red, bright_red, set_hard
+        )
+
+        # Mute/Unmute button
+
+        mute_button_rect = pygame.Rect(
+            10, 10, mute_icon.get_width(), mute_icon.get_height()
+        )
+
+        # Check if a difficulty button is clicked
+        mouse = pygame.mouse.get_pos()
+        click = pygame.mouse.get_pressed()
+        difficulty_buttons = [
+            {
+                "rect": pygame.Rect(center_x - 275, center_y, 150, 50),
+                "action": set_easy,
+            },
+            {
+                "rect": pygame.Rect(center_x - 75, center_y, 150, 50),
+                "action": set_medium,
+            },
+            {
+                "rect": pygame.Rect(center_x + 125, center_y, 150, 50),
+                "action": set_hard,
+            },
+        ]
+
+        for button in difficulty_buttons:
+            if button["rect"].collidepoint(mouse) and click[0] == 1:
+                button["action"]()
+                if pygame.mixer.music.get_busy():
+                    pygame.mixer.music.stop()
+                menu_active = False
+
+        # Check if the mute button is clicked
+        if mute_button_rect.collidepoint(mouse) and click[0] == 1:
+            # Toggle mute status
+            mute_status = not mute_status
+            # Toggle sounds based on mute status
+            pygame.mixer.music.set_volume(0.0 if mute_status else 1.0)
+            menu_sound.set_volume(0.0 if mute_status else 1.0)
+            game_sound.set_volume(0.0 if mute_status else 1.0)
+            death_sound.set_volume(0.0 if mute_status else 1.0)
+
+        # Draw mute button image
+        if mute_status:
+            dis.blit(mute_icon, (10, 10))
+        else:
+            dis.blit(sound_icon, (10, 10))
+
+        # Scroll the background continuously
+        scroll += 2
+        if scroll >= 3000:
+            scroll = 0
+
+        pygame.display.update()
+
+
 def gameLoop():
     global special_food_appeared, special_foodx, special_foody
     global speed_food_appeared, speed_foodx, speed_foody
     global snake_speed
     global length_of_snake
-    global mute_status
     global difficulty
+    global mute_status
 
     original_snake_speed = snake_speed
     start_time = time.time()
@@ -457,7 +631,7 @@ def gameLoop():
     length_of_snake = 1
 
     # Generate the layout
-    layouts = generate_layout(dis_width, dis_height, difficulty)
+    layouts = generate_layout(dis_width, dis_height, difficulty, snake_block)
 
     # Generate the first food
     foodx, foody = generate_food_position_with_layout_constraints(
@@ -485,7 +659,11 @@ def gameLoop():
                         game_over = True
                         game_close = False
                     if event.key == pygame.K_c:
-                        main_menu()  # Exit the defeat screen loop
+                        if not mute_status:
+                            pygame.mixer.stop()
+                            main_menu()
+                        else:
+                            main_menu()
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -504,7 +682,11 @@ def gameLoop():
                     y1_change = snake_block
                     x1_change = 0
                 elif event.key == pygame.K_ESCAPE:
-                    main_menu()
+                    if not mute_status:
+                        pygame.mixer.stop()
+                        main_menu()
+                    else:
+                        main_menu()
 
         dis.blit(game_background, [0, 0])
         your_score(length_of_snake - 1)
@@ -531,7 +713,7 @@ def gameLoop():
 
         # Normal food
         draw_food("normal", foodx, foody)
-        
+
         # Check the probability of special food appearing
         if not special_food_appeared and random.random() < 0.001:
             special_food_appeared = True
@@ -562,7 +744,6 @@ def gameLoop():
         # Draw the special food if it has appeared
         if special_food_appeared:
             draw_food("special", special_foodx, special_foody)
-
 
         # Draw the speed food if it has appeared
         if speed_food_appeared:
@@ -626,155 +807,6 @@ def gameLoop():
 
     pygame.quit()
     quit()
-
-
-# Functions to set difficulty
-def set_easy():
-    global difficulty
-    global snake_speed
-    difficulty = 2
-    snake_speed = 20
-    gameLoop()
-
-
-def set_medium():
-    global difficulty
-    global snake_speed
-    difficulty = 5
-    snake_speed = 25
-    gameLoop()
-
-
-def set_hard():
-    global difficulty
-    global snake_speed
-    difficulty = 10
-    snake_speed = 30
-    gameLoop()
-
-
-def draw_menu_background():
-    global scroll
-    for x in range(5):
-        speed = 0.5
-        for i in bg_images:
-            dis.blit(i, ((x * bg_width) - scroll * speed, 0))
-            speed += 0.2
-
-
-def play_menu_sound():
-    menu_sound.play()
-    menu_sound.set_volume(0.5)
-    menu_sound.play(-1)
-
-
-def play_game_sound():
-    game_sound.play()
-    game_sound.set_volume(0.5)
-    game_sound.play(-1)
-
-
-def play_death_sound():
-    death_sound.play()
-    death_sound.set_volume(0.5)
-
-
-def toggle_mute():
-    pass
-
-
-pygame.mixer.init()
-
-
-# Main menu function
-def main_menu():
-    global mute_status
-    global scroll
-    scroll = 0
-    menu_active = True
-
-    play_menu_sound()
-
-    # Mute status
-    mute_status = False
-    mute_button_img = sound_icon
-
-    while menu_active:
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                pygame.quit()
-                sys.exit()
-
-        draw_menu_background()
-        # print the title SNAKE in Custom font
-        draw_main_title("SNAKE - GAME")
-        draw_quit_button()
-        # Draw buttons
-        center_x = dis_width // 2
-        center_y = dis_height // 2
-        # Adjust the x-coordinates for the "Easy", "Medium", and "Hard" buttons
-        draw_button(
-            "Easy", center_x - 275, center_y, 150, 50, green, bright_green, set_easy
-        )
-        draw_button(
-            "Medium", center_x - 75, center_y, 150, 50, blue, bright_blue, set_medium
-        )
-        draw_button(
-            "Hard", center_x + 125, center_y, 150, 50, red, bright_red, set_hard
-        )
-
-        # Mute/Unmute button
-
-        mute_button_rect = pygame.Rect(
-            10, 10, mute_icon.get_width(), mute_icon.get_height()
-        )
-
-        # Check if a difficulty button is clicked
-        mouse = pygame.mouse.get_pos()
-        click = pygame.mouse.get_pressed()
-        difficulty_buttons = [
-            {
-                "rect": pygame.Rect(center_x - 275, center_y, 150, 50),
-                "action": set_easy,
-            },
-            {
-                "rect": pygame.Rect(center_x - 75, center_y, 150, 50),
-                "action": set_medium,
-            },
-            {
-                "rect": pygame.Rect(center_x + 125, center_y, 150, 50),
-                "action": set_hard,
-            },
-        ]
-
-        for button in difficulty_buttons:
-            if button["rect"].collidepoint(mouse) and click[0] == 1:
-                button["action"]()
-                if pygame.mixer.music.get_busy():
-                    pygame.mixer.music.stop()
-                menu_active = False
-
-        # Check if the mute button is clicked
-        if mute_button_rect.collidepoint(mouse) and click[0] == 1:
-            # Toggle mute status
-            mute_status = not mute_status
-            # Change mute button image
-            mute_button_img = mute_icon if mute_status else sound_icon
-            # Toggle sounds based on mute status
-            pygame.mixer.music.set_volume(0.0 if mute_status else 1.0)
-            menu_sound.set_volume(0.0 if mute_status else 1.0)
-            game_sound.set_volume(0.0 if mute_status else 1.0)
-            death_sound.set_volume(0.0 if mute_status else 1.0)
-
-        # Draw mute button image
-        dis.blit(mute_button_img, (10, 10))
-
-        # Scroll the background continuously
-        scroll += 2
-        if scroll >= 3000:
-            scroll = 0
-
-        pygame.display.update()
 
 
 # Call the main menu function
